@@ -1,0 +1,39 @@
+diff --git a/Packet++/src/SipLayer.cpp b/Packet++/src/SipLayer.cpp
+index 54038d2..6deda18 100644
+--- a/Packet++/src/SipLayer.cpp
++++ b/Packet++/src/SipLayer.cpp
+@@ -307,7 +307,7 @@ void SipRequestFirstLine::parseVersion()
+ 	verPos++;
+ 
+ 	int endOfVerPos = 0;
+-	while (((verPos+endOfVerPos)[0] != '\r') && ((verPos+endOfVerPos)[0] != '\n'))
++	while (((verPos+endOfVerPos)[0] != '\r') && ((verPos+endOfVerPos)[0] != '\n') && endOfVerPos < strlen(verPos) -1)
+ 		endOfVerPos++;
+ 
+ 	m_Version = std::string(verPos, endOfVerPos);
+diff --git a/Packet++/src/TextBasedProtocol.cpp b/Packet++/src/TextBasedProtocol.cpp
+index 4daa894..69505c3 100644
+--- a/Packet++/src/TextBasedProtocol.cpp
++++ b/Packet++/src/TextBasedProtocol.cpp
+@@ -108,6 +108,7 @@ void TextBasedProtocolMessage::parseFields()
+ 	// last field can be one of:
+ 	// a.) \r\n\r\n or \n\n marking the end of the header
+ 	// b.) the end of the packet
++	int iterations = 0;
+ 	while (!curField->isEndOfHeader() && curOffset + curField->getFieldSize() < m_DataLen)
+ 	{
+ 		curOffset += curField->getFieldSize();
+@@ -127,6 +128,13 @@ void TextBasedProtocolMessage::parseFields()
+ 			delete newField;
+ 			break;
+ 		}
++		// The number of request fields is limited by default to 100 for Apache.  
++		// (see http://httpd.apache.org/docs/2.2/mod/core.html#limitrequestfields)
++		if (iterations == 100)
++		{ 
++			break;
++		}
++		iterations++;
+ 	}
+ 
+ 	m_LastField = curField;
